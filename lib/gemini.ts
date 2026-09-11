@@ -1,10 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+/**
+ * `gemini-flash-latest` resolves to the newest flash model the key can use,
+ * which avoids failed calls when a key has no access to a specific version.
+ */
 const MODEL_CANDIDATES = [
   process.env.GEMINI_MODEL?.trim(),
+  "gemini-flash-latest",
   "gemini-3.8-flash",
-  "gemini-3.7-flash",
-  "gemini-3.6-flash",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
 ].filter((m): m is string => Boolean(m));
