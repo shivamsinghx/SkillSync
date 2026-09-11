@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Aurora from "@/components/Aurora";
@@ -11,25 +11,32 @@ import { AuthModal } from "@/components/ui/auth-modal";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
-import * as pdfjs from "pdfjs-dist";
-
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+const HISTORY_KEY = "skillsync-history";
 
 async function extractTextFromPDF(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-  let fullText = "";
+  const formData = new FormData();
+  formData.append("file", file);
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(" ");
-    fullText += pageText + "\n";
+  const res = await fetch("/api/parse-resume", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(
+      typeof data.error === "string"
+        ? data.error
+        : "Failed to read the PDF. Try pasting the text instead."
+    );
   }
-  return fullText;
+
+  if (typeof data.text !== "string" || !data.text.trim()) {
+    throw new Error("No text found in that PDF. Try pasting the text instead.");
+  }
+
+  return data.text;
 }
 
 
@@ -48,7 +55,7 @@ type HistoryItem = AnalysisResult & {
   jobDescription: string;
 };
 
-export default function Home() {
+function Home() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
   const searchParams = useSearchParams();
@@ -64,20 +71,13 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [imageError, setImageError] = useState(false);
 
-  // ── LinkedIn popup-import ────────────────────────────────────────────────
+
   const popupRef = useRef<Window | null>(null);
   const bookmarkletRef = useRef<HTMLAnchorElement>(null);
 
-  /** True when the job-description field contains a LinkedIn URL. */
   const isLinkedInUrl = /^https?:\/\/(www\.)?linkedin\.com/i.test(jobDescription.trim());
 
-  /**
-   * Bookmarklet href — generated on the client so it embeds the correct
-   * app origin.  The script:
-   *   1. Reads the job description from the LinkedIn DOM.
-   *   2a. If opened from our popup  → postMessage back, then closes itself.
-   *   2b. Otherwise (standalone tab) → redirects to our app with ?jd=…
-   */
+
   const bookmarkletHref = useMemo(() => {
     if (typeof window === 'undefined') return '#';
     const origin = window.location.origin;
@@ -115,7 +115,7 @@ export default function Home() {
     }
   }, [bookmarkletHref]);
 
-  /** Listen for the postMessage the bookmarklet sends when run inside our popup. */
+
   useEffect(() => {
     function onImportMessage(event: MessageEvent) {
       if (
@@ -136,7 +136,7 @@ export default function Home() {
     return () => window.removeEventListener('message', onImportMessage);
   }, []);
 
-  /** Handle ?jd= fallback: bookmarklet ran in a standalone tab, not a popup. */
+
   useEffect(() => {
     const jd = searchParams.get('jd');
     if (jd && jd.trim().length > 0) {
@@ -146,14 +146,16 @@ export default function Home() {
       window.history.replaceState({}, '', url.toString());
     }
   }, [searchParams]);
-  // ─────────────────────────────────────────────────────────────────────────
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(() => {
     try {
-      const res = await fetch("/api/history");
-      if (!res.ok) return;
-      const data = await res.json();
-      setHistory(data.items ?? []);
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (!raw) {
+        setHistory([]);
+        return;
+      }
+      const parsed = JSON.parse(raw) as HistoryItem[];
+      setHistory(Array.isArray(parsed) ? parsed : []);
     } catch (e) {
       console.error(e);
     }
@@ -168,7 +170,7 @@ export default function Home() {
     setError(null);
     setLoading(true);
 
-    // --- START OF MODIFICATION AT LINE 87 ---
+
     try {
       let jobDescriptionToUse = jobDescription.trim();
       let portfolioTextToUse = resumeText.trim(); // Default to pasted text
@@ -209,7 +211,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jobDescription: jobDescriptionToUse,
-          portfolioText: portfolioTextToUse, 
+          portfolioText: portfolioTextToUse,
         }),
       });
 // --- END OF MODIFICATION ---
@@ -237,7 +239,28 @@ export default function Home() {
         limit: data.limit,
         plan: data.plan,
       });
-      await loadHistory();
+
+      const historyItem: HistoryItem = {
+        id: data.id ?? crypto.randomUUID(),
+        createdAt: data.createdAt ?? new Date().toISOString(),
+        jobDescription: jobDescriptionToUse.slice(0, 160),
+        matchedSkills: data.matchedSkills ?? [],
+        missingSkills: data.missingSkills ?? [],
+        highlightProject: data.highlightProject ?? "",
+        pitch: data.pitch ?? "",
+      };
+
+      let prev: HistoryItem[] = [];
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        prev = raw ? (JSON.parse(raw) as HistoryItem[]) : [];
+        if (!Array.isArray(prev)) prev = [];
+      } catch {
+        prev = [];
+      }
+      const nextHistory = [historyItem, ...prev].slice(0, 20);
+      setHistory(nextHistory);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
     } catch (error) {
       console.error(error);
       const msg = error instanceof Error ? error.message : "Something went wrong while analyzing.";
@@ -706,3 +729,16 @@ export default function Home() {
   );
 }
 
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <main className="relative min-h-screen flex items-center justify-center bg-background text-foreground">
+          <p className="text-sm text-muted-foreground">Loading SkillSync…</p>
+        </main>
+      }
+    >
+      <Home />
+    </Suspense>
+  );
+}

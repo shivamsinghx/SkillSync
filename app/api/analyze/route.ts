@@ -24,10 +24,7 @@ export async function POST(req: Request) {
   }
 
   if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -37,11 +34,11 @@ export async function POST(req: Request) {
     if (!jobDescription || !portfolioText) {
       return NextResponse.json(
         { error: "Job description and portfolio text are required" },
-      { status: 400 }
-    );
-  }
+        { status: 400 }
+      );
+    }
 
-  const analysis = await analyzeSkillFit({
+    const analysis = await analyzeSkillFit({
       jobDescription,
       portfolioText,
     });
@@ -56,9 +53,6 @@ export async function POST(req: Request) {
     } else if (error && typeof (error as { message?: string }).message === "string") {
       message = (error as { message: string }).message;
     }
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
