@@ -104,11 +104,6 @@ function Home() {
     );
   }, []);
 
-  /**
-   * React blocks `javascript:` hrefs as a security measure, so we bypass it
-   * by setting the attribute directly on the DOM node after mount.
-   * This lets the browser treat the <a> as a real draggable bookmarklet link.
-   */
   useEffect(() => {
     if (bookmarkletRef.current && bookmarkletHref !== '#') {
       bookmarkletRef.current.setAttribute('href', bookmarkletHref);
@@ -126,7 +121,6 @@ function Home() {
         event.data.jobDescription.trim().length > 0
       ) {
         setJobDescription(event.data.jobDescription);
-        // Close the popup if it's still open
         if (popupRef.current && !popupRef.current.closed) {
           popupRef.current.close();
         }
@@ -173,9 +167,8 @@ function Home() {
 
     try {
       let jobDescriptionToUse = jobDescription.trim();
-      let portfolioTextToUse = resumeText.trim(); // Default to pasted text
+      let portfolioTextToUse = resumeText.trim();
 
-      // NEW: Extract text if a file is uploaded
       if (resumeFile) {
         try {
           portfolioTextToUse = await extractTextFromPDF(resumeFile);
@@ -186,7 +179,6 @@ function Home() {
         }
       }
 
-      // Existing scraping logic
       if (/^https?:\/\//i.test(jobDescriptionToUse)) {
         const scrapeRes = await fetch("/api/scrape-job", {
           method: "POST",
@@ -197,7 +189,7 @@ function Home() {
         if (!scrapeRes.ok) {
           const scrapeErr = await scrapeRes.json().catch(() => ({}));
           setError(scrapeErr.error || "Couldn't extract the job description.");
-          setLoading(false); // Make sure to reset loading
+          setLoading(false);
           return;
         }
 
@@ -205,7 +197,6 @@ function Home() {
         jobDescriptionToUse = scraped.jobDescription || jobDescriptionToUse;
       }
 
-      // API CALL: Now using 'portfolioTextToUse' instead of 'resumeText'
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -214,7 +205,6 @@ function Home() {
           portfolioText: portfolioTextToUse,
         }),
       });
-// --- END OF MODIFICATION ---
 
       if (!res.ok) {
         const text = await res.text();
@@ -309,7 +299,6 @@ function Home() {
   }, [isAuthenticated, loadHistory]);
 
   useEffect(() => {
-    // Reset image error when session or image URL changes
     setImageError(false);
   }, [session?.user?.image]);
 
@@ -469,7 +458,6 @@ function Home() {
                 onChange={(e) => setJobDescription(e.target.value)}
               />
 
-              {/* LinkedIn popup-import helper — shown when user pastes a LinkedIn URL */}
               {isLinkedInUrl && (
                 <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
                   <p className="text-sm font-semibold text-amber-400">
@@ -480,12 +468,10 @@ function Home() {
                     Use the 2-step flow below to import the job description automatically—no copy-paste needed.
                   </p>
 
-                  {/* Step 1 — install bookmarklet once */}
                   <div className="rounded-lg border border-border bg-background/60 p-3 space-y-1.5">
                     <p className="text-xs font-medium text-foreground">
                       Step 1 &mdash; one-time setup: drag this to your bookmarks bar
                     </p>
-                    {/* href is set imperatively via ref to bypass React’s javascript: URL block */}
                     <a
                       ref={bookmarkletRef}
                       onClick={(e) => e.preventDefault()}
@@ -500,7 +486,6 @@ function Home() {
                     </p>
                   </div>
 
-                  {/* Step 2 — open popup and run bookmarklet */}
                   <div className="rounded-lg border border-border bg-background/60 p-3 space-y-1.5">
                     <p className="text-xs font-medium text-foreground">
                       Step 2 &mdash; click to open the job page, then click the bookmarklet

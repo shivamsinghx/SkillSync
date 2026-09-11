@@ -27,18 +27,15 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user, account, profile }) {
-      // When user signs in, include profile image in token
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        // Google provider returns picture in profile, GitHub uses avatar_url
         token.picture = user.image || (profile as any)?.picture || (profile as any)?.avatar_url || (profile as any)?.image;
       }
       return token;
     },
     async session({ session, token }) {
-      // Include image in session from token
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;

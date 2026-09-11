@@ -1,9 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/**
- * `gemini-flash-latest` resolves to the newest flash model the key can use,
- * which avoids failed calls when a key has no access to a specific version.
- */
 const MODEL_CANDIDATES = [
   process.env.GEMINI_MODEL?.trim(),
   "gemini-flash-latest",
@@ -41,10 +37,6 @@ function parseAnalysisJson(text: string): AnalysisShape {
   }
 }
 
-/**
- * Some models reject this API key tier with 401/403 rather than 404, so an
- * auth failure on one model does not mean the key itself is unusable.
- */
 function shouldTryNextModel(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return /not found|not supported|unknown model|404|401|403|429|503|overloaded|unavailable|ACCESS_TOKEN_TYPE_UNSUPPORTED|PERMISSION_DENIED|UNAUTHENTICATED/i.test(

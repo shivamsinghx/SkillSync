@@ -22,8 +22,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // LinkedIn requires a logged-in browser session — server-side fetch always
-    // receives a login page instead of the job description.
     if (/linkedin\.com/i.test(url)) {
       return NextResponse.json(
         {
