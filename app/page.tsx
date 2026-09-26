@@ -173,7 +173,11 @@ function Home() {
         try {
           portfolioTextToUse = await extractTextFromPDF(resumeFile);
         } catch (err) {
-          setError("Failed to read the PDF. Try pasting the text instead.");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to read the PDF. Try pasting the text instead."
+          );
           setLoading(false);
           return;
         }

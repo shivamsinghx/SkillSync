@@ -7,6 +7,22 @@ export const runtime = "nodejs";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
+function sanitizeParseError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  const sanitized = raw
+    .replace(/[A-Za-z]:\\[^\s"'`]+/g, "[path]")
+    .replace(/\/(?:Users|home|root|var|tmp|private|opt)[^\s"'`]+/g, "[path]")
+    .replace(/(?:api[_-]?key|password|secret|token|credential)s?\s*[:=]\s*\S+/gi, "[redacted]")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!sanitized) {
+    return "Failed to read the PDF. Try pasting the text instead.";
+  }
+
+  return sanitized.length > 300 ? `${sanitized.slice(0, 300)}…` : sanitized;
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
@@ -53,7 +69,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Parse resume error:", error);
     return NextResponse.json(
-      { error: "Failed to read the PDF. Try pasting the text instead." },
+      { error: sanitizeParseError(error) },
       { status: 500 }
     );
   }
