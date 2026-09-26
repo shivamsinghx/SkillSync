@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   title: "SkillSync",
   description:
     "Compare job requirements with your portfolio to find skill gaps and generate a tailored pitch.",
+  icons: {
+    icon: "/favicon.jpg",
+    apple: "/favicon.jpg",
+  },
 };
 
 export default function RootLayout({

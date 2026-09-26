@@ -8,12 +8,23 @@ import { Meteors } from "@/components/ui/meteors";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 import { AuthModal } from "@/components/ui/auth-modal";
-import { Button } from "@/components/ui/button";
 import { FileUploadFieldInput } from "@/components/inputs/file-upload-field-input";
 import { TextareaFieldInput } from "@/components/inputs/textarea-field-input";
 import { ThreeDButton } from "@/components/buttons/three-d-button";
-import { ResourceLinksPanel } from "@/components/resources/resource-links-panel";
+import { UserMenuDropdown } from "@/components/dropdowns/user-menu-dropdown";
 import { LogOut } from "lucide-react";
+
+function formatSkillLabel(skill: string) {
+  return skill
+    .replace(/[_-]+/g, " ")
+    .replace(/\//g, " / ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .replace(/\(/g, " (")
+    .replace(/\)/g, ") ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 async function extractTextFromPDF(file: File): Promise<string> {
   const formData = new FormData();
@@ -71,7 +82,6 @@ function Home() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usageInfo, setUsageInfo] = useState<{ usedToday?: number; limit?: number | null; plan?: string } | null>(null);
-  const [imageError, setImageError] = useState(false);
 
 
   const popupRef = useRef<Window | null>(null);
@@ -260,10 +270,6 @@ function Home() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    setImageError(false);
-  }, [session?.user?.image]);
-
   const handleCopyPitch = async () => {
     if (!analysisResult?.pitch) return;
     try {
@@ -336,36 +342,27 @@ function Home() {
       <Meteors number={30} />
 
       {isAuthenticated && session?.user && (
-        <header className="pointer-events-none fixed top-4 right-4 z-30">
-          <div className="pointer-events-auto flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-emerald-500 to-sky-500 text-xs font-semibold text-white overflow-hidden">
-              {session.user.image && !imageError ? (
-                <img
-                  src={session.user.image}
-                  alt={session.user.name || session.user.email || "User avatar"}
-                  className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                initials
-              )}
-            </div>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className="rounded-full"
-              onClick={() => signOut()}
-              aria-label="Log out"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
+        <header className="fixed top-4 right-4 z-50">
+          <UserMenuDropdown
+            userName={session.user.name || "User"}
+            userEmail={session.user.email || ""}
+            avatarSrc={session.user.image || undefined}
+            avatarAlt={session.user.name || session.user.email || "User"}
+            avatarFallback={initials}
+            items={[
+              {
+                id: "sign-out",
+                label: "Sign Out",
+                icon: <LogOut />,
+                danger: true,
+                onClick: () => signOut(),
+              },
+            ]}
+          />
         </header>
       )}
 
-      <div className="relative z-20 max-w-5xl w-full px-6 py-10 md:py-16">
+      <div className="relative z-20 max-w-7xl w-full px-6 py-10 md:py-16">
         <div className="text-center max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             <TypingAnimation typeSpeed={80} className="inline-block">
@@ -399,7 +396,7 @@ function Home() {
         </div>
 
         {isAuthenticated && (
-          <div className="mt-10 grid gap-8 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] items-start">
+          <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(300px,1.05fr)_minmax(260px,1fr)_minmax(260px,0.95fr)] items-start">
             <div className="rounded-3xl border border-neutral-100 bg-white p-6 md:p-7 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)]">
               <div className="flex items-center justify-between gap-3 mb-5">
                 <h2 className="text-lg font-semibold tracking-tight">Describe the role</h2>
@@ -507,8 +504,7 @@ function Home() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="rounded-3xl border border-neutral-100 bg-white p-5 md:p-6 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] min-h-[180px] flex flex-col">
+            <div className="rounded-3xl border border-neutral-100 bg-white p-5 md:p-6 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] min-h-[180px] flex flex-col">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <h2 className="text-lg font-semibold tracking-tight">Results</h2>
                 </div>
@@ -521,19 +517,19 @@ function Home() {
 
                 {analysisResult && (
                   <div className="space-y-4 text-left">
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-700 mb-2">
+                    <div className="space-y-3">
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5">
+                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 mb-3">
                           Matched skills
                         </h3>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {analysisResult.matchedSkills?.length ? (
                             analysisResult.matchedSkills.map((skill) => (
                               <span
                                 key={skill}
-                                className="rounded-full bg-white text-emerald-800 border border-emerald-200 px-2 py-0.5 text-xs"
+                                className="inline-flex max-w-full items-center rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-left text-xs leading-snug font-medium text-emerald-800"
                               >
-                                {skill}
+                                {formatSkillLabel(skill)}
                               </span>
                             ))
                           ) : (
@@ -544,18 +540,18 @@ function Home() {
                         </div>
                       </div>
 
-                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-800 mb-2">
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5">
+                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800 mb-3">
                           Missing skills
                         </h3>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {analysisResult.missingSkills?.length ? (
                             analysisResult.missingSkills.map((skill) => (
                               <span
                                 key={skill}
-                                className="rounded-full bg-white text-amber-900 border border-amber-200 px-2 py-0.5 text-xs"
+                                className="inline-flex max-w-full items-center rounded-full border border-amber-200 bg-white px-3 py-1.5 text-left text-xs leading-snug font-medium text-amber-900"
                               >
-                                {skill}
+                                {formatSkillLabel(skill)}
                               </span>
                             ))
                           ) : (
@@ -612,36 +608,66 @@ function Home() {
                     </div>
                   </div>
                 )}
+            </div>
+
+            <div className="rounded-3xl border border-neutral-100 bg-white p-5 md:p-6 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] min-h-[180px]">
+              <div className="mb-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-500">
+                  FOCUS AREAS
+                </p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                  What to learn
+                </h2>
+                <p className="mt-1 text-xs text-neutral-500">
+                  Where this company leans hardest for this role. Some topic suggestions that will help you to learn and get hired.
+                </p>
               </div>
 
-              <div className="rounded-3xl border border-neutral-100 bg-white p-4 md:p-5 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)]">
-                {analysisResult?.focusAreas?.length ? (
-                  <ResourceLinksPanel
-                    title="What to learn / what you should focus on"
-                    sortItems={false}
-                    items={analysisResult.focusAreas.map((area) => ({
-                      name: area.name,
-                      description: area.description,
-                      href: `https://www.google.com/search?q=${encodeURIComponent(
-                        `${area.name} ${jobDescription.slice(0, 80)}`
-                      )}`,
-                      letter: area.name.trim().charAt(0).toUpperCase() || "•",
-                      domain: "focus",
-                    }))}
-                  />
-                ) : (
-                  <div>
-                    <h3 className="font-sans text-sm font-semibold text-neutral-900">
-                      What to learn / what you should focus on
-                    </h3>
-                    <p className="mt-3 text-sm text-neutral-500">
-                      After analysis, this list will show the areas this company
-                      leans on for the role — based on the job description — so
-                      you know what to study next.
-                    </p>
-                  </div>
-                )}
-              </div>
+              {analysisResult?.focusAreas?.length ? (
+                <ul className="space-y-3">
+                  {analysisResult.focusAreas.map((area, index) => (
+                    <li
+                      key={`${area.name}-${index}`}
+                      className="rounded-2xl border border-neutral-100 bg-neutral-50/80 p-3.5 transition-colors hover:border-neutral-200 hover:bg-white"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-neutral-900">
+                            {area.name}
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                            {area.description}
+                          </p>
+                        </div>
+                        <a
+                          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                            `${area.name} tutorial`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Search YouTube for ${area.name}`}
+                          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm transition hover:border-rose-200 hover:shadow-md"
+                        >
+                          <img
+                            src="/youtube.png"
+                            alt=""
+                            width={22}
+                            height={22}
+                            className="size-[22px]"
+                          />
+                        </a>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/70 px-4 py-8 text-center">
+                  <p className="text-sm text-neutral-500">
+                    Run an analysis and this column will list the topics this
+                    company expects you to know — each with a YouTube search.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -81,6 +81,7 @@ Return ONLY valid JSON with this exact shape:
   "focusAreas": { "name": string, "description": string }[]
 }
 
+matchedSkills and missingSkills must be short, human-readable labels with spaces (e.g. "AWS Lambda", "REST Architecture"), never camelCase or smashed words.
 focusAreas must be 3 to 6 items. Each name is a skill, system, or practice this company leans on for THIS role. Each description explains why that area matters for this company and job, based on the JD — not generic career advice.
 
 Job Description:
