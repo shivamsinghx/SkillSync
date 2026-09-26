@@ -169,7 +169,7 @@ function Home() {
       let jobDescriptionToUse = jobDescription.trim();
       let portfolioTextToUse = resumeText.trim();
 
-      if (resumeFile) {
+      if (!portfolioTextToUse && resumeFile) {
         try {
           portfolioTextToUse = await extractTextFromPDF(resumeFile);
         } catch (err) {
