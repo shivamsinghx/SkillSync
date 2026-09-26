@@ -532,7 +532,13 @@ function Home() {
                     className="w-full rounded-lg border border-border bg-background/80 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/60 min-h-[80px] resize-y"
                     placeholder="Paste bullets, projects, or your resume text.."
                     value={resumeText}
-                    onChange={(e) => setResumeText(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setResumeText(value);
+                      if (value.trim()) {
+                        setResumeFile(null);
+                      }
+                    }}
                   />
                 </div>
               </div>
