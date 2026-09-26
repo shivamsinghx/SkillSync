@@ -316,7 +316,7 @@ export const FileUploadFieldInput = forwardRef<
 
       <div
         className={cn(
-          "overflow-hidden rounded-2xl border bg-background px-5 py-5 transition-[border-color] duration-200",
+          "overflow-hidden rounded-2xl border bg-background px-5 py-5 transition-[border-color] duration-200 dark:border-white/10 dark:bg-transparent",
           showError ? "border-rose-200 dark:border-rose-500/40" : "border-border",
         )}
       >
@@ -357,7 +357,7 @@ export const FileUploadFieldInput = forwardRef<
                 showError && "border-rose-300 bg-rose-50/40 dark:border-rose-500/50 dark:bg-rose-500/10",
                 !dragging &&
                   !showError &&
-                  "border-border bg-muted hover:border-foreground/30 hover:bg-muted/80",
+                  "border-border bg-muted hover:border-foreground/30 hover:bg-muted/80 dark:border-white/10 dark:bg-transparent dark:hover:bg-white/[0.04]",
                 disabled && "cursor-not-allowed opacity-60",
               )}
             >

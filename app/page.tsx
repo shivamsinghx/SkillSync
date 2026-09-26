@@ -114,6 +114,7 @@ function Home() {
   const [jobDescription, setJobDescription] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const analysisEpoch = useRef(0);
   const [usageInfo, setUsageInfo] = useState<{ usedToday?: number; limit?: number | null; plan?: string } | null>(null);
 
 
@@ -192,6 +193,7 @@ function Home() {
       return;
     }
 
+    const epoch = analysisEpoch.current;
     setError(null);
     setLoading(true);
 
@@ -206,10 +208,13 @@ function Home() {
         const message =
           err instanceof Error ? err.message : "PDF parse failed (unknown error)";
         console.info("[handleAnalyze] pdf error", message);
+        if (analysisEpoch.current !== epoch) return;
         setError(message);
         setLoading(false);
         return;
       }
+
+      if (analysisEpoch.current !== epoch) return;
 
       if (/^https?:\/\//i.test(jobDescriptionToUse)) {
         const scrapeRes = await fetch("/api/scrape-job", {
@@ -217,6 +222,8 @@ function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: jobDescriptionToUse }),
         });
+
+        if (analysisEpoch.current !== epoch) return;
 
         if (!scrapeRes.ok) {
           const scrapeErr = await scrapeRes.json().catch(() => ({}));
@@ -238,6 +245,8 @@ function Home() {
         }),
       });
 
+      if (analysisEpoch.current !== epoch) return;
+
       if (!res.ok) {
         const text = await res.text();
         let err: { error?: string; code?: string; limit?: number } = {};
@@ -255,6 +264,7 @@ function Home() {
       }
 
       const data = await res.json();
+      if (analysisEpoch.current !== epoch) return;
       setAnalysisResult(data);
       setUsageInfo({
         usedToday: data.usedToday,
@@ -264,11 +274,20 @@ function Home() {
 
     } catch (error) {
       console.error(error);
+      if (analysisEpoch.current !== epoch) return;
       const msg = error instanceof Error ? error.message : "Something went wrong while analyzing.";
       setError(msg);
     } finally {
-      setLoading(false);
+      if (analysisEpoch.current === epoch) setLoading(false);
     }
+  }
+
+  function handleResumeFilesChange(files: File[]) {
+    analysisEpoch.current += 1;
+    setResumeFile(files[0] ?? null);
+    setAnalysisResult(null);
+    setError(null);
+    setLoading(false);
   }
 
   function handleOpenLinkedInPopup() {
@@ -422,8 +441,8 @@ function Home() {
         </div>
 
         {isAuthenticated && (
-          <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(300px,1.05fr)_minmax(260px,1fr)_minmax(260px,0.95fr)] items-start">
-            <div className="rounded-3xl border border-border bg-card p-6 md:p-7 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)]">
+          <div className="mt-16 grid gap-6 lg:grid-cols-[minmax(300px,1.05fr)_minmax(260px,1fr)_minmax(260px,0.95fr)] items-start">
+            <div className="rounded-3xl border border-border bg-card p-6 md:p-7 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:border-transparent dark:bg-transparent dark:shadow-none">
               <div className="flex items-center justify-between gap-3 mb-5">
                 <h2 className="text-lg font-semibold tracking-tight">Describe the role</h2>
                 {usageInfo && usageInfo.limit && (
@@ -442,6 +461,7 @@ function Home() {
                 maxLength={8000}
                 rows={6}
                 containerClassName="max-w-none"
+                className="dark:border-white/10 dark:bg-transparent"
               />
 
               {isLinkedInUrl && (
@@ -505,7 +525,7 @@ function Home() {
                   maxSizeBytes={10 * 1024 * 1024}
                   required
                   containerClassName="max-w-none"
-                  onFilesChange={(files) => setResumeFile(files[0] ?? null)}
+                  onFilesChange={handleResumeFilesChange}
                 />
               </div>
 
@@ -541,7 +561,7 @@ function Home() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-card p-5 md:p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)] min-h-[180px] flex flex-col">
+            <div className="rounded-3xl border border-border bg-card p-5 md:p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:border-transparent dark:bg-transparent dark:shadow-none min-h-[180px] flex flex-col">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <h2 className="text-lg font-semibold tracking-tight">Results</h2>
                 </div>
@@ -647,7 +667,7 @@ function Home() {
                 )}
             </div>
 
-            <div className="rounded-3xl border border-border bg-card p-5 md:p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)] min-h-[180px]">
+            <div className="rounded-3xl border border-border bg-card p-5 md:p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:border-transparent dark:bg-transparent dark:shadow-none min-h-[180px]">
               <div className="mb-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-500 dark:text-rose-400">
                   FOCUS AREAS
@@ -698,7 +718,7 @@ function Home() {
                   ))}
                 </ul>
               ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8 text-center">
+                <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8 text-center dark:border-white/15 dark:bg-transparent">
                   <p className="text-sm text-muted-foreground">
                     Run an analysis and this column will list the topics this
                     company expects you to know — each with a YouTube search.
