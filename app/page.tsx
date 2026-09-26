@@ -10,6 +10,7 @@ import { FileUploadFieldInput } from "@/components/inputs/file-upload-field-inpu
 import { TextareaFieldInput } from "@/components/inputs/textarea-field-input";
 import { ThreeDButton } from "@/components/buttons/three-d-button";
 import { UserMenuDropdown } from "@/components/dropdowns/user-menu-dropdown";
+import { SpinLoader } from "@/components/loaders/spin-loader";
 import { LogOut } from "lucide-react";
 
 function formatSkillLabel(skill: string) {
@@ -357,20 +358,20 @@ function Home() {
         }
       >
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="font-serif text-2xl text-neutral-900 dark:text-neutral-100">
+          <h1 className="font-serif text-5xl md:text-8xl text-neutral-900 dark:text-neutral-100">
             SkillSync.
           </h1>
 
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            See where you match. Fix what you don't.
+            see where you match fix what you don't.
           </p>
 
           {!isAuthenticated && (
             <p className="mt-6 text-sm md:text-base text-muted-foreground leading-relaxed">
               SkillSync analyzes job requirements and compares them with your
               portfolio to identify skill gaps, highlight your strongest projects,
-              and generate a tailored pitch that helps you stand out and get hired
-              FASTERRR.
+              and generate a tailored pitch that helps you stand out.
+            
             </p>
           )}
 
@@ -490,7 +491,18 @@ function Home() {
                   onClick={handleAnalyze}
                   disabled={loading}
                 >
-                  {loading ? "Analyzing..." : "Analyze my fit"}
+                  {loading ? (
+                    <>
+                      <SpinLoader
+                        size="sm"
+                        label="Analyzing"
+                        iconClassName="text-white dark:text-neutral-900"
+                      />
+                      Analyzing...
+                    </>
+                  ) : (
+                    "Analyze my fit"
+                  )}
                 </ThreeDButton>
               </div>
             </div>
