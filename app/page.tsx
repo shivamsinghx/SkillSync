@@ -25,13 +25,20 @@ async function extractTextFromPDF(file: File): Promise<string> {
   });
 
   const data = await res.json().catch(() => ({}));
+  console.info("[extractTextFromPDF] status", res.status);
+  console.info("[extractTextFromPDF] json keys", Object.keys(data));
+  console.info(
+    "[extractTextFromPDF] error field",
+    typeof data.error === "string" ? data.error : typeof data.error
+  );
 
   if (!res.ok) {
-    throw new Error(
-      typeof data.error === "string"
+    const apiError =
+      typeof data.error === "string" && data.error.trim()
         ? data.error
-        : "Failed to read the PDF. Try pasting the text instead."
-    );
+        : `PDF parse failed (HTTP ${res.status})`;
+    console.info("[extractTextFromPDF] throwing", apiError);
+    throw new Error(apiError);
   }
 
   if (typeof data.text !== "string" || !data.text.trim()) {
@@ -153,11 +160,10 @@ function Home() {
       try {
         portfolioTextToUse = await extractTextFromPDF(resumeFile);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to read the PDF. Try pasting the text instead."
-        );
+        const message =
+          err instanceof Error ? err.message : "PDF parse failed (unknown error)";
+        console.info("[handleAnalyze] pdf error", message);
+        setError(message);
         setLoading(false);
         return;
       }

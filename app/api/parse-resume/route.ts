@@ -31,15 +31,28 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.info("[parse-resume] request received");
     const formData = await req.formData();
     const file = formData.get("file");
 
-    if (!(file instanceof File)) {
+    if (!(file instanceof Blob)) {
+      console.info("[parse-resume] missing file field", {
+        fieldType: file === null ? "null" : typeof file,
+      });
       return NextResponse.json(
         { error: "Upload a PDF resume." },
         { status: 400 }
       );
     }
+
+    const fileName = file instanceof File ? file.name : "upload.bin";
+    const contentType = file.type || "unknown";
+    console.info("[parse-resume] upload meta", {
+      fileName,
+      fileSize: file.size,
+      contentType,
+      isFile: file instanceof File,
+    });
 
     if (file.size > MAX_BYTES) {
       return NextResponse.json(
@@ -68,6 +81,10 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error("Parse resume error:", error);
+    console.error("[parse-resume] parser exception", {
+      name: error instanceof Error ? error.name : "unknown",
+      message: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       { error: sanitizeParseError(error) },
       { status: 500 }
