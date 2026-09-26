@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Aurora from "@/components/Aurora";
@@ -9,9 +9,11 @@ import { TypingAnimation } from "@/components/ui/typing-animation";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 import { AuthModal } from "@/components/ui/auth-modal";
 import { Button } from "@/components/ui/button";
+import { FileUploadFieldInput } from "@/components/inputs/file-upload-field-input";
+import { TextareaFieldInput } from "@/components/inputs/textarea-field-input";
+import { ThreeDButton } from "@/components/buttons/three-d-button";
+import { ResourceLinksPanel } from "@/components/resources/resource-links-panel";
 import { LogOut } from "lucide-react";
-
-const HISTORY_KEY = "skillsync-history";
 
 async function extractTextFromPDF(file: File): Promise<string> {
   const formData = new FormData();
@@ -47,12 +49,7 @@ type AnalysisResult = {
   highlightProject: string;
   pitch: string;
   createdAt?: string;
-};
-
-type HistoryItem = AnalysisResult & {
-  id: string;
-  createdAt: string;
-  jobDescription: string;
+  focusAreas?: { name: string; description: string }[];
 };
 
 function Home() {
@@ -64,11 +61,9 @@ function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
-  const [resumeText, setResumeText] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usageInfo, setUsageInfo] = useState<{ usedToday?: number; limit?: number | null; plan?: string } | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [imageError, setImageError] = useState(false);
 
 
@@ -141,23 +136,9 @@ function Home() {
     }
   }, [searchParams]);
 
-  const loadHistory = useCallback(() => {
-    try {
-      const raw = localStorage.getItem(HISTORY_KEY);
-      if (!raw) {
-        setHistory([]);
-        return;
-      }
-      const parsed = JSON.parse(raw) as HistoryItem[];
-      setHistory(Array.isArray(parsed) ? parsed : []);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
   async function handleAnalyze() {
-    if (!jobDescription || (!resumeText && !resumeFile)) {
-      setError("Add a linkedin job description (or link) and upload your resume (or paste it).");
+    if (!jobDescription || !resumeFile) {
+      setError("Add a job description (or link) and upload your resume PDF.");
       return;
     }
 
@@ -167,20 +148,18 @@ function Home() {
 
     try {
       let jobDescriptionToUse = jobDescription.trim();
-      let portfolioTextToUse = resumeText.trim();
+      let portfolioTextToUse = "";
 
-      if (!portfolioTextToUse && resumeFile) {
-        try {
-          portfolioTextToUse = await extractTextFromPDF(resumeFile);
-        } catch (err) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to read the PDF. Try pasting the text instead."
-          );
-          setLoading(false);
-          return;
-        }
+      try {
+        portfolioTextToUse = await extractTextFromPDF(resumeFile);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to read the PDF. Try pasting the text instead."
+        );
+        setLoading(false);
+        return;
       }
 
       if (/^https?:\/\//i.test(jobDescriptionToUse)) {
@@ -234,27 +213,6 @@ function Home() {
         plan: data.plan,
       });
 
-      const historyItem: HistoryItem = {
-        id: data.id ?? crypto.randomUUID(),
-        createdAt: data.createdAt ?? new Date().toISOString(),
-        jobDescription: jobDescriptionToUse.slice(0, 160),
-        matchedSkills: data.matchedSkills ?? [],
-        missingSkills: data.missingSkills ?? [],
-        highlightProject: data.highlightProject ?? "",
-        pitch: data.pitch ?? "",
-      };
-
-      let prev: HistoryItem[] = [];
-      try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-        prev = raw ? (JSON.parse(raw) as HistoryItem[]) : [];
-        if (!Array.isArray(prev)) prev = [];
-      } catch {
-        prev = [];
-      }
-      const nextHistory = [historyItem, ...prev].slice(0, 20);
-      setHistory(nextHistory);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
     } catch (error) {
       console.error(error);
       const msg = error instanceof Error ? error.message : "Something went wrong while analyzing.";
@@ -295,12 +253,6 @@ function Home() {
       window.history.replaceState({}, "", url.toString());
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadHistory();
-    }
-  }, [isAuthenticated, loadHistory]);
 
   useEffect(() => {
     setImageError(false);
@@ -442,24 +394,25 @@ function Home() {
 
         {isAuthenticated && (
           <div className="mt-10 grid gap-8 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] items-start">
-            <div className="rounded-2xl border border-white/20 bg-background/20 backdrop-blur-xl p-6 md:p-7 shadow-xl shadow-black/30">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-lg font-semibold">Describe the role</h2>
+            <div className="rounded-3xl border border-neutral-100 bg-white p-6 md:p-7 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)]">
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <h2 className="text-lg font-semibold tracking-tight">Describe the role</h2>
                 {usageInfo && usageInfo.limit && (
-                  <span className="text-xs rounded-full bg-muted px-3 py-1 text-muted-foreground">
+                  <span className="text-xs rounded-full bg-neutral-100 px-3 py-1 text-neutral-500">
                     {usageInfo.usedToday ?? 0}/{usageInfo.limit} analyses today (free)
                   </span>
                 )}
               </div>
 
-              <label className="block text-sm font-medium mb-1">
-                Job description
-              </label>
-              <textarea
-                className="w-full rounded-lg border border-border bg-background/80 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/60 min-h-[120px] resize-y"
+              <TextareaFieldInput
+                label="Job description"
+                hint="Paste the job description, or a LinkedIn job URL."
                 placeholder="Paste the job description text, or a LinkedIn job URL"
                 value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
+                onChange={(value) => setJobDescription(value)}
+                maxLength={8000}
+                rows={6}
+                containerClassName="max-w-none"
               />
 
               {isLinkedInUrl && (
@@ -510,70 +463,52 @@ function Home() {
                 </div>
               )}
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Upload resume (PDF)
-                  </label>
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-muted file:px-3 file:py-1.5 file:text-xs file:font-medium hover:file:bg-muted/80 cursor-pointer"
-                  />
-                  {resumeFile && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Selected: {resumeFile.name}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    or paste your portfolio/resume
-                  </label>
-                  <textarea
-                    className="w-full rounded-lg border border-border bg-background/80 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/60 min-h-[80px] resize-y"
-                    placeholder="Paste bullets, projects, or your resume text.."
-                    value={resumeText}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setResumeText(value);
-                      if (value.trim()) {
-                        setResumeFile(null);
-                      }
-                    }}
-                  />
-                </div>
+              <div className="mt-6">
+                <FileUploadFieldInput
+                  label="Upload resume"
+                  hint="PDF only, up to 10 MB. This is the resume used for analysis."
+                  browseLabel="Choose PDF"
+                  dropLabel="Drop your resume here"
+                  replaceLabel="Replace PDF"
+                  accept=".pdf,application/pdf"
+                  multiple={false}
+                  maxFiles={1}
+                  maxSizeBytes={10 * 1024 * 1024}
+                  required
+                  containerClassName="max-w-none"
+                  onFilesChange={(files) => setResumeFile(files[0] ?? null)}
+                />
               </div>
 
               {error && (
-                <p className="mt-4 text-sm text-red-500">
+                <p className="mt-4 text-sm text-rose-600">
                   {error}
                 </p>
               )}
 
               <div className="mt-6 flex justify-between items-center gap-3">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-neutral-500">
                   {session?.user?.plan === "PRO" && "You're on the Pro plan – no daily limits."}
                 </div>
-                <RainbowButton
-                  className="px-5 py-3 text-sm font-semibold"
+                <ThreeDButton
+                  variant="solid"
+                  size="lg"
                   onClick={handleAnalyze}
+                  disabled={loading}
                 >
                   {loading ? "Analyzing..." : "Analyze my fit"}
-                </RainbowButton>
+                </ThreeDButton>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-2xl border border-white/20 bg-background/20 backdrop-blur-xl p-5 md:p-6 shadow-xl shadow-black/30 min-h-[180px] flex flex-col">
+              <div className="rounded-3xl border border-neutral-100 bg-white p-5 md:p-6 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] min-h-[180px] flex flex-col">
                 <div className="flex items-center justify-between gap-3 mb-3">
-                  <h2 className="text-lg font-semibold">Results</h2>
+                  <h2 className="text-lg font-semibold tracking-tight">Results</h2>
                 </div>
 
                 {!analysisResult && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-neutral-500">
                     Run an analysis to see matched skills, gaps, and a tailored pitch.
                   </p>
                 )}
@@ -581,8 +516,8 @@ function Home() {
                 {analysisResult && (
                   <div className="space-y-4 text-left">
                     <div className="grid gap-3 md:grid-cols-2">
-                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-400 mb-2">
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-700 mb-2">
                           Matched skills
                         </h3>
                         <div className="flex flex-wrap gap-1.5">
@@ -590,21 +525,21 @@ function Home() {
                             analysisResult.matchedSkills.map((skill) => (
                               <span
                                 key={skill}
-                                className="rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-500/20 px-2 py-0.5 text-xs"
+                                className="rounded-full bg-white text-emerald-800 border border-emerald-200 px-2 py-0.5 text-xs"
                               >
                                 {skill}
                               </span>
                             ))
                           ) : (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-neutral-500">
                               No strong matches detected yet.
                             </p>
                           )}
                         </div>
                       </div>
 
-                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-300 mb-2">
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-800 mb-2">
                           Missing skills
                         </h3>
                         <div className="flex flex-wrap gap-1.5">
@@ -612,13 +547,13 @@ function Home() {
                             analysisResult.missingSkills.map((skill) => (
                               <span
                                 key={skill}
-                                className="rounded-full bg-amber-500/10 text-amber-100 border border-amber-500/20 px-2 py-0.5 text-xs"
+                                className="rounded-full bg-white text-amber-900 border border-amber-200 px-2 py-0.5 text-xs"
                               >
                                 {skill}
                               </span>
                             ))
                           ) : (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-neutral-500">
                               No major gaps flagged.
                             </p>
                           )}
@@ -673,42 +608,33 @@ function Home() {
                 )}
               </div>
 
-              <div className="rounded-2xl border border-white/20 bg-background/20 backdrop-blur-xl p-4 md:p-5 shadow-lg shadow-black/30 max-h-[260px] overflow-y-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-sm font-semibold">Recent analyses</h2>
-                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Last {history.length} runs
-                  </span>
-                </div>
-                {history.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Your latest analyses will show up here once you start using SkillSync.
-                  </p>
+              <div className="rounded-3xl border border-neutral-100 bg-white p-4 md:p-5 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)]">
+                {analysisResult?.focusAreas?.length ? (
+                  <ResourceLinksPanel
+                    title="What to learn / what you should focus on"
+                    sortItems={false}
+                    items={analysisResult.focusAreas.map((area) => ({
+                      name: area.name,
+                      description: area.description,
+                      href: `https://www.google.com/search?q=${encodeURIComponent(
+                        `${area.name} ${jobDescription.slice(0, 80)}`
+                      )}`,
+                      letter: area.name.trim().charAt(0).toUpperCase() || "•",
+                      domain: "focus",
+                    }))}
+                  />
+                ) : (
+                  <div>
+                    <h3 className="font-sans text-sm font-semibold text-neutral-900">
+                      What to learn / what you should focus on
+                    </h3>
+                    <p className="mt-3 text-sm text-neutral-500">
+                      After analysis, this list will show the areas this company
+                      leans on for the role — based on the job description — so
+                      you know what to study next.
+                    </p>
+                  </div>
                 )}
-                <ul className="space-y-2 text-sm">
-                  {history.map((item) => (
-                    <li
-                      key={item.id}
-                      className="rounded-lg border border-border/50 bg-background/80 px-3 py-2 hover:bg-background cursor-default"
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <p className="text-xs text-muted-foreground">
-                          {item.jobDescription}
-                        </p>
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(item.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        Matched {item.matchedSkills?.length ?? 0} • Missing{" "}
-                        {item.missingSkills?.length ?? 0}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           </div>

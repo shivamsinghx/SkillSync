@@ -13,6 +13,7 @@ type AnalysisShape = {
   missingSkills: string[];
   highlightProject: string;
   pitch: string;
+  focusAreas: { name: string; description: string }[];
 };
 
 function parseAnalysisJson(text: string): AnalysisShape {
@@ -76,8 +77,11 @@ Return ONLY valid JSON with this exact shape:
   "matchedSkills": string[],
   "missingSkills": string[],
   "highlightProject": string,
-  "pitch": string
+  "pitch": string,
+  "focusAreas": { "name": string, "description": string }[]
 }
+
+focusAreas must be 3 to 6 items. Each name is a skill, system, or practice this company leans on for THIS role. Each description explains why that area matters for this company and job, based on the JD — not generic career advice.
 
 Job Description:
 """
@@ -120,6 +124,20 @@ ${input.portfolioText}
             ? parsed.highlightProject
             : "",
         pitch: typeof parsed.pitch === "string" ? parsed.pitch : "",
+        focusAreas: Array.isArray(parsed.focusAreas)
+          ? parsed.focusAreas
+              .filter(
+                (item): item is { name: string; description: string } =>
+                  Boolean(item) &&
+                  typeof item.name === "string" &&
+                  typeof item.description === "string"
+              )
+              .map((item) => ({
+                name: item.name.trim(),
+                description: item.description.trim(),
+              }))
+              .filter((item) => item.name && item.description)
+          : [],
       };
     } catch (error) {
       lastError = error;
