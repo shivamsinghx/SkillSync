@@ -84,7 +84,7 @@ export const TextareaFieldInput = forwardRef<
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
         <label
           htmlFor={inputId}
-          className="text-sm font-medium text-neutral-900"
+          className="text-sm font-medium text-foreground"
         >
           {label}
           {required ? (
@@ -98,8 +98,8 @@ export const TextareaFieldInput = forwardRef<
           <span
             id={countId}
             className={cn(
-              "text-xs text-neutral-400 tabular-nums",
-              atLimit && "text-amber-600",
+              "text-xs text-muted-foreground tabular-nums",
+              atLimit && "text-amber-600 dark:text-amber-400",
             )}
           >
             {length}/{safeMaxLength}
@@ -127,21 +127,21 @@ export const TextareaFieldInput = forwardRef<
         }
         onChange={handleChange}
         className={cn(
-          "min-h-24 w-full resize-y rounded-lg border bg-white px-3.5 py-2.5 font-sans text-sm leading-relaxed text-neutral-900 ring-0 transition-[border-color,background-color] duration-200 outline-none placeholder:text-neutral-400 focus:ring-0 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400",
+          "min-h-24 w-full resize-y rounded-lg border bg-background px-3.5 py-2.5 font-sans text-sm leading-relaxed text-foreground ring-0 transition-[border-color,background-color] duration-200 outline-none placeholder:text-muted-foreground focus:ring-0 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground",
           error
-            ? "border-rose-300 focus:border-rose-400"
-            : "border-neutral-200 focus:border-neutral-900",
+            ? "border-rose-300 focus:border-rose-400 dark:border-rose-500/50"
+            : "border-input focus:border-foreground",
           className,
         )}
         {...props}
       />
 
       {error ? (
-        <p id={errorId} role="alert" className="mt-1.5 text-xs text-rose-600">
+        <p id={errorId} role="alert" className="mt-1.5 text-xs text-rose-600 dark:text-rose-400">
           {errorMessage}
         </p>
       ) : hint ? (
-        <p id={hintId} className="mt-1.5 text-xs text-neutral-500">
+        <p id={hintId} className="mt-1.5 text-xs text-muted-foreground">
           {hint}
         </p>
       ) : null}

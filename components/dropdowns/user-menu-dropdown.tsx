@@ -66,7 +66,7 @@ type UserMenuItemRowProps = Readonly<{
 
 function UserMenuItemRow({ item, onSelect }: UserMenuItemRowProps) {
   if (item.separator) {
-    return <hr className="mx-1 my-1 h-px border-0 bg-neutral-100" />;
+    return <hr className="mx-1 my-1 h-px border-0 bg-border" />;
   }
 
   return (
@@ -78,8 +78,8 @@ function UserMenuItemRow({ item, onSelect }: UserMenuItemRowProps) {
       className={cn(
         "group flex w-full cursor-pointer items-center justify-between gap-6 rounded-lg px-2.5 py-2 text-left text-[12px] font-medium transition-colors duration-200",
         item.danger
-          ? "text-red-500 hover:bg-red-50"
-          : "text-neutral-700 hover:bg-neutral-50",
+          ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+          : "text-foreground hover:bg-accent",
       )}
     >
       <span className="flex min-w-0 items-center gap-2">
@@ -87,7 +87,7 @@ function UserMenuItemRow({ item, onSelect }: UserMenuItemRowProps) {
           <span
             className={cn(
               "shrink-0 transition-transform duration-300 group-hover:scale-105",
-              item.danger ? "text-red-400" : "text-neutral-400",
+              item.danger ? "text-red-400" : "text-muted-foreground",
             )}
           >
             {cloneElement(
@@ -103,7 +103,7 @@ function UserMenuItemRow({ item, onSelect }: UserMenuItemRowProps) {
       </span>
 
       {item.kbd ? (
-        <kbd className="shrink-0 font-mono text-[9px] text-neutral-400">
+        <kbd className="shrink-0 font-mono text-[9px] text-muted-foreground">
           {item.kbd}
         </kbd>
       ) : null}
@@ -183,11 +183,11 @@ export const UserMenuDropdown = forwardRef<
               }
             }}
             className={cn(
-              "group inline-flex h-12 cursor-pointer items-center gap-3 rounded-full border bg-white pr-4 pl-1.5 transition-all duration-300",
-              open ? "border-neutral-200" : "border-neutral-100",
+              "group inline-flex h-12 cursor-pointer items-center gap-3 rounded-full border bg-card pr-4 pl-1.5 text-card-foreground transition-all duration-300",
+              open ? "border-border" : "border-border/80",
             )}
           >
-            <div className="relative size-9 overflow-hidden rounded-full border-2 border-neutral-100 bg-neutral-100">
+            <div className="relative size-9 overflow-hidden rounded-full border-2 border-border bg-muted">
               {avatarSrc ? (
                 <Image
                   src={avatarSrc}
@@ -198,23 +198,23 @@ export const UserMenuDropdown = forwardRef<
                   unoptimized={avatarSrc.startsWith("http")}
                 />
               ) : (
-                <span className="flex size-full items-center justify-center text-[11px] font-semibold text-neutral-600">
+                <span className="flex size-full items-center justify-center text-[11px] font-semibold text-muted-foreground">
                   {avatarFallback}
                 </span>
               )}
             </div>
             <div className="min-w-0 max-w-[168px] text-left">
-              <p className="truncate text-sm leading-none font-medium text-neutral-700">
+              <p className="truncate text-sm leading-none font-medium text-foreground">
                 {userName}
               </p>
-              <p className="mt-0.5 truncate text-[10px] text-neutral-400">
+              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
                 {userEmail}
               </p>
             </div>
             <ChevronDown
               size={14}
               className={cn(
-                "shrink-0 text-neutral-400 transition-transform duration-300 ease-out",
+                "shrink-0 text-muted-foreground transition-transform duration-300 ease-out",
                 open ? "rotate-180" : "group-hover:translate-y-px",
               )}
             />
@@ -227,8 +227,8 @@ export const UserMenuDropdown = forwardRef<
               aria-label={`${userName} menu`}
               className={cn(
                 "absolute top-[calc(100%+10px)] right-0 z-100 w-56",
-                "origin-top rounded-xl border border-neutral-100 bg-white p-1",
-                "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)]",
+                "origin-top rounded-xl border border-border bg-popover p-1 text-popover-foreground",
+                "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]",
                 "blur-0 translate-y-0 scale-100 opacity-100",
                 "starting:-translate-y-1 starting:scale-[0.96] starting:opacity-0 starting:blur-[3px]",
                 "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -237,7 +237,7 @@ export const UserMenuDropdown = forwardRef<
               {/* Caret — integrated into the panel, not a separate blob */}
               <span
                 aria-hidden
-                className="absolute -top-1.25 right-7 size-2.5 rotate-45 border border-r-0 border-b-0 border-neutral-100 bg-white"
+                className="absolute -top-1.25 right-7 size-2.5 rotate-45 border border-r-0 border-b-0 border-border bg-popover"
               />
 
               <div className="relative">

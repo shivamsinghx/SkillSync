@@ -41,16 +41,18 @@ const PRESSED_DARK =
 const VARIANT: Record<ThreeDButtonVariant, string> = {
   solid: cn(
     "bg-neutral-800 text-white hover:bg-neutral-700 active:bg-neutral-900",
+    "dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white dark:active:bg-neutral-200",
     BEVEL_DARK,
     PRESSED_DARK,
+    "dark:shadow-[0_1px_1px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.1),0_6px_12px_rgba(0,0,0,0.08),inset_0_1px_2px_rgba(255,255,255,0.55),inset_0_-2px_4px_rgba(0,0,0,0.08)]",
   ),
   soft: cn(
-    "bg-neutral-50 text-neutral-800 hover:text-neutral-900 active:bg-neutral-100",
+    "bg-muted text-foreground hover:bg-accent active:bg-accent",
     BEVEL_LIGHT,
     PRESSED_LIGHT,
   ),
   muted: cn(
-    "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900 active:bg-neutral-200",
+    "bg-secondary text-secondary-foreground hover:bg-accent active:bg-accent",
     BEVEL_LIGHT,
     PRESSED_LIGHT,
   ),
@@ -81,7 +83,7 @@ export const ThreeDButton = forwardRef<HTMLButtonElement, ThreeDButtonProps>(
         className={cn(
           "inline-flex cursor-pointer items-center justify-center font-sans font-semibold outline-none select-none",
           "transition-[background-color,box-shadow,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
-          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
           "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40",
           SIZE[size],
           VARIANT[variant],

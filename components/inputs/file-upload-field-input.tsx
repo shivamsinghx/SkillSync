@@ -289,7 +289,7 @@ export const FileUploadFieldInput = forwardRef<
     >
       <label
         htmlFor={inputId}
-        className="mb-1.5 block w-fit cursor-pointer text-sm font-medium text-neutral-900"
+        className="mb-1.5 block w-fit cursor-pointer text-sm font-medium text-foreground"
       >
         {label}
         {required ? (
@@ -316,8 +316,8 @@ export const FileUploadFieldInput = forwardRef<
 
       <div
         className={cn(
-          "overflow-hidden rounded-2xl border bg-white px-5 py-5 transition-[border-color] duration-200",
-          showError ? "border-rose-200" : "border-neutral-100",
+          "overflow-hidden rounded-2xl border bg-background px-5 py-5 transition-[border-color] duration-200",
+          showError ? "border-rose-200 dark:border-rose-500/40" : "border-border",
         )}
       >
         {!hasFiles ? (
@@ -352,12 +352,12 @@ export const FileUploadFieldInput = forwardRef<
               }}
               onDrop={handleDrop}
               className={cn(
-                "group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-xl border ring-0 transition-[border-color,background-color] duration-200 outline-none focus:border-neutral-900 focus:ring-0",
-                dragging && !showError && "border-neutral-900 bg-neutral-50",
-                showError && "border-rose-300 bg-rose-50/40",
+                "group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-xl border ring-0 transition-[border-color,background-color] duration-200 outline-none focus:border-foreground focus:ring-0",
+                dragging && !showError && "border-foreground bg-muted",
+                showError && "border-rose-300 bg-rose-50/40 dark:border-rose-500/50 dark:bg-rose-500/10",
                 !dragging &&
                   !showError &&
-                  "border-neutral-100 bg-neutral-50 hover:border-neutral-300 hover:bg-neutral-50/80",
+                  "border-border bg-muted hover:border-foreground/30 hover:bg-muted/80",
                 disabled && "cursor-not-allowed opacity-60",
               )}
             >
@@ -368,44 +368,44 @@ export const FileUploadFieldInput = forwardRef<
                 {Array.from({ length: 9 }, (_, index) => (
                   <div
                     key={`grid-${index}`}
-                    className="border border-neutral-100/90"
+                    className="border border-border/80"
                   />
                 ))}
               </div>
 
               <span
                 aria-hidden
-                className="absolute top-3 left-3 size-5 border-t-2 border-l-2 border-neutral-300 transition-colors duration-200 group-hover:border-neutral-500"
+                className="absolute top-3 left-3 size-5 border-t-2 border-l-2 border-muted-foreground/40 transition-colors duration-200 group-hover:border-foreground/60"
               />
               <span
                 aria-hidden
-                className="absolute top-3 right-3 size-5 border-t-2 border-r-2 border-neutral-300 transition-colors duration-200 group-hover:border-neutral-500"
+                className="absolute top-3 right-3 size-5 border-t-2 border-r-2 border-muted-foreground/40 transition-colors duration-200 group-hover:border-foreground/60"
               />
               <span
                 aria-hidden
-                className="absolute bottom-3 left-3 size-5 border-b-2 border-l-2 border-neutral-300 transition-colors duration-200 group-hover:border-neutral-500"
+                className="absolute bottom-3 left-3 size-5 border-b-2 border-l-2 border-muted-foreground/40 transition-colors duration-200 group-hover:border-foreground/60"
               />
               <span
                 aria-hidden
-                className="absolute right-3 bottom-3 size-5 border-r-2 border-b-2 border-neutral-300 transition-colors duration-200 group-hover:border-neutral-500"
+                className="absolute right-3 bottom-3 size-5 border-r-2 border-b-2 border-muted-foreground/40 transition-colors duration-200 group-hover:border-foreground/60"
               />
 
               <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
                 <span
                   className={cn(
-                    "mb-3 flex size-12 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-600 transition-[border-color,transform] duration-200",
-                    dragging && "scale-105 border-neutral-900 text-neutral-900",
+                    "mb-3 flex size-12 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-[border-color,transform] duration-200",
+                    dragging && "scale-105 border-foreground text-foreground",
                     !dragging &&
-                      "group-hover:border-neutral-400 group-hover:text-neutral-900",
+                      "group-hover:border-foreground/40 group-hover:text-foreground",
                   )}
                 >
                   <ImagePlus size={22} strokeWidth={1.75} aria-hidden />
                 </span>
 
-                <span className="font-serif text-lg text-neutral-900">
+                <span className="font-serif text-lg text-foreground">
                   {dragging ? "Release to upload" : dropLabel}
                 </span>
-                <span className="mt-1 text-sm text-neutral-500">
+                <span className="mt-1 text-sm text-muted-foreground">
                   Drag & drop or click anywhere
                 </span>
               </div>
@@ -413,10 +413,10 @@ export const FileUploadFieldInput = forwardRef<
 
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-neutral-400">
+                <p className="text-sm font-medium text-muted-foreground">
                   No file selected
                 </p>
-                <p className="mt-0.5 text-xs text-neutral-500">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {acceptTokens.join(", ")} · max {maxSizeLabel}
                   {multiple ? ` · up to ${safeMaxFiles} files` : ""}
                 </p>
@@ -429,7 +429,7 @@ export const FileUploadFieldInput = forwardRef<
                     event.stopPropagation();
                     openPicker();
                   }}
-                  className="inline-flex h-9 shrink-0 cursor-pointer items-center rounded-lg bg-neutral-900 px-4 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  className="inline-flex h-9 shrink-0 cursor-pointer items-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90"
                 >
                   {browseLabel}
                 </button>
@@ -440,7 +440,7 @@ export const FileUploadFieldInput = forwardRef<
               {acceptTokens.map((token) => (
                 <span
                   key={token}
-                  className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[10px] font-medium tracking-wide text-neutral-600 uppercase"
+                  className="rounded-full border border-border bg-muted px-2.5 py-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
                 >
                   {token}
                 </span>
@@ -449,7 +449,7 @@ export const FileUploadFieldInput = forwardRef<
           </div>
         ) : showSinglePreview && primaryEntry ? (
           <div className="space-y-4">
-            <div className="relative overflow-hidden rounded-xl border border-neutral-100 bg-neutral-50">
+            <div className="relative overflow-hidden rounded-xl border border-border bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={primaryEntry.previewUrl}
@@ -461,7 +461,7 @@ export const FileUploadFieldInput = forwardRef<
                   type="button"
                   aria-label={`Remove ${primaryEntry.file.name}`}
                   onClick={() => removeFile(primaryEntry.id)}
-                  className="absolute top-2.5 right-2.5 flex size-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-900"
+                  className="absolute top-2.5 right-2.5 flex size-8 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
                 >
                   <X size={14} strokeWidth={2} aria-hidden />
                 </button>
@@ -470,10 +470,10 @@ export const FileUploadFieldInput = forwardRef<
 
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-neutral-900">
+                <p className="truncate text-sm font-medium text-foreground">
                   {primaryEntry.file.name}
                 </p>
-                <p className="mt-0.5 text-xs text-neutral-500">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatFileSize(primaryEntry.file.size)} · Ready to upload
                 </p>
               </div>
@@ -481,7 +481,7 @@ export const FileUploadFieldInput = forwardRef<
                 <button
                   type="button"
                   onClick={openPicker}
-                  className="shrink-0 cursor-pointer text-sm font-medium text-neutral-900 underline-offset-2 hover:underline"
+                  className="shrink-0 cursor-pointer text-sm font-medium text-foreground underline-offset-2 hover:underline"
                 >
                   {replaceLabel}
                 </button>
@@ -494,10 +494,10 @@ export const FileUploadFieldInput = forwardRef<
               {entries.map((entry) => (
                 <li
                   key={entry.id}
-                  className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/80 p-2.5"
+                  className="flex items-center gap-3 rounded-xl border border-border bg-muted/80 p-2.5"
                 >
                   {entry.previewUrl ? (
-                    <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-neutral-100 bg-white">
+                    <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-background">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={entry.previewUrl}
@@ -506,7 +506,7 @@ export const FileUploadFieldInput = forwardRef<
                       />
                     </div>
                   ) : (
-                    <span className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-neutral-100 bg-white text-neutral-600">
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground">
                       {isPdfFile(entry.file) ? (
                         <FileText size={18} strokeWidth={1.75} aria-hidden />
                       ) : (
@@ -516,10 +516,10 @@ export const FileUploadFieldInput = forwardRef<
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-neutral-900">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {entry.file.name}
                     </p>
-                    <p className="mt-0.5 text-xs text-neutral-500">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {formatFileSize(entry.file.size)}
                     </p>
                   </div>
@@ -529,7 +529,7 @@ export const FileUploadFieldInput = forwardRef<
                       type="button"
                       aria-label={`Remove ${entry.file.name}`}
                       onClick={() => removeFile(entry.id)}
-                      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-900"
+                      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
                     >
                       <X size={14} strokeWidth={2} aria-hidden />
                     </button>
@@ -542,7 +542,7 @@ export const FileUploadFieldInput = forwardRef<
               <button
                 type="button"
                 onClick={openPicker}
-                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-200 bg-white text-sm font-medium text-neutral-700 transition-colors hover:border-neutral-400 hover:bg-neutral-50"
+                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background text-sm font-medium text-foreground transition-colors hover:border-foreground/40 hover:bg-muted"
               >
                 <Plus size={16} strokeWidth={2} aria-hidden />
                 Add another file
@@ -553,7 +553,7 @@ export const FileUploadFieldInput = forwardRef<
               <button
                 type="button"
                 onClick={openPicker}
-                className="text-sm font-medium text-neutral-900 underline-offset-2 hover:underline"
+                className="text-sm font-medium text-foreground underline-offset-2 hover:underline"
               >
                 {replaceLabel}
               </button>
@@ -563,11 +563,11 @@ export const FileUploadFieldInput = forwardRef<
       </div>
 
       {showError ? (
-        <p id={errorId} role="alert" className="mt-1.5 text-xs text-rose-600">
+        <p id={errorId} role="alert" className="mt-1.5 text-xs text-rose-600 dark:text-rose-400">
           {message}
         </p>
       ) : hint ? (
-        <p id={hintId} className="mt-1.5 text-xs text-neutral-500">
+        <p id={hintId} className="mt-1.5 text-xs text-muted-foreground">
           {hint}
         </p>
       ) : null}

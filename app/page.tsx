@@ -3,9 +3,7 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import Aurora from "@/components/Aurora";
-import { Meteors } from "@/components/ui/meteors";
-import { TypingAnimation } from "@/components/ui/typing-animation";
+import { ThemedArcBandsBackground } from "@/components/background-gradient/themed-arc-bands-background";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 import { AuthModal } from "@/components/ui/auth-modal";
 import { FileUploadFieldInput } from "@/components/inputs/file-upload-field-input";
@@ -329,18 +327,7 @@ function Home() {
       .toUpperCase() || (session?.user?.email?.[0] || "?").toUpperCase();
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute bottom-[-8vh] left-0 w-full h-[45vh] overflow-hidden transform scale-y-[-1]">
-        <Aurora
-          colorStops={["#7cff67", "#B19EEF", "#5227FF"]}
-          blend={0.5}
-          amplitude={1.0}
-          speed={1}
-        />
-      </div>
-
-      <Meteors number={30} />
-
+    <ThemedArcBandsBackground>
       {isAuthenticated && session?.user && (
         <header className="fixed top-4 right-4 z-50">
           <UserMenuDropdown
@@ -362,12 +349,16 @@ function Home() {
         </header>
       )}
 
-      <div className="relative z-20 max-w-7xl w-full px-6 py-10 md:py-16">
+      <div
+        className={
+          isAuthenticated
+            ? "relative z-20 mx-auto w-full max-w-7xl px-6 py-10 md:py-16"
+            : "relative z-20 mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-6 py-10 md:py-16"
+        }
+      >
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            <TypingAnimation typeSpeed={80} className="inline-block">
-              SkillSync.
-            </TypingAnimation>
+          <h1 className="font-serif text-2xl text-neutral-900 dark:text-neutral-100">
+            SkillSync.
           </h1>
 
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
@@ -397,11 +388,11 @@ function Home() {
 
         {isAuthenticated && (
           <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(300px,1.05fr)_minmax(260px,1fr)_minmax(260px,0.95fr)] items-start">
-            <div className="rounded-3xl border border-neutral-100 bg-white p-6 md:p-7 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)]">
+            <div className="rounded-3xl border border-border bg-card p-6 md:p-7 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)]">
               <div className="flex items-center justify-between gap-3 mb-5">
                 <h2 className="text-lg font-semibold tracking-tight">Describe the role</h2>
                 {usageInfo && usageInfo.limit && (
-                  <span className="text-xs rounded-full bg-neutral-100 px-3 py-1 text-neutral-500">
+                  <span className="text-xs rounded-full bg-muted px-3 py-1 text-muted-foreground">
                     {usageInfo.usedToday ?? 0}/{usageInfo.limit} analyses today (free)
                   </span>
                 )}
@@ -484,13 +475,13 @@ function Home() {
               </div>
 
               {error && (
-                <p className="mt-4 text-sm text-rose-600">
+                <p className="mt-4 text-sm text-rose-600 dark:text-rose-400">
                   {error}
                 </p>
               )}
 
               <div className="mt-6 flex justify-between items-center gap-3">
-                <div className="text-xs text-neutral-500">
+                <div className="text-xs text-muted-foreground">
                   {session?.user?.plan === "PRO" && "You're on the Pro plan – no daily limits."}
                 </div>
                 <ThreeDButton
@@ -504,13 +495,13 @@ function Home() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-neutral-100 bg-white p-5 md:p-6 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] min-h-[180px] flex flex-col">
+            <div className="rounded-3xl border border-border bg-card p-5 md:p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)] min-h-[180px] flex flex-col">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <h2 className="text-lg font-semibold tracking-tight">Results</h2>
                 </div>
 
                 {!analysisResult && (
-                  <p className="text-sm text-neutral-500">
+                  <p className="text-sm text-muted-foreground">
                     Run an analysis to see matched skills, gaps, and a tailored pitch.
                   </p>
                 )}
@@ -518,8 +509,8 @@ function Home() {
                 {analysisResult && (
                   <div className="space-y-4 text-left">
                     <div className="space-y-3">
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5">
-                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 mb-3">
+                      <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50 p-3.5 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300 mb-3">
                           Matched skills
                         </h3>
                         <div className="flex flex-wrap gap-2">
@@ -527,21 +518,21 @@ function Home() {
                             analysisResult.matchedSkills.map((skill) => (
                               <span
                                 key={skill}
-                                className="inline-flex max-w-full items-center rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-left text-xs leading-snug font-medium text-emerald-800"
+                                className="inline-flex max-w-full items-center rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-left text-xs leading-snug font-medium text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:text-emerald-200"
                               >
                                 {formatSkillLabel(skill)}
                               </span>
                             ))
                           ) : (
-                            <p className="text-xs text-neutral-500">
+                            <p className="text-xs text-muted-foreground">
                               No strong matches detected yet.
                             </p>
                           )}
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5">
-                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800 mb-3">
+                      <div className="rounded-2xl border border-amber-200/80 bg-amber-50 p-3.5 dark:border-amber-500/25 dark:bg-amber-500/10">
+                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800 dark:text-amber-300 mb-3">
                           Missing skills
                         </h3>
                         <div className="flex flex-wrap gap-2">
@@ -549,13 +540,13 @@ function Home() {
                             analysisResult.missingSkills.map((skill) => (
                               <span
                                 key={skill}
-                                className="inline-flex max-w-full items-center rounded-full border border-amber-200 bg-white px-3 py-1.5 text-left text-xs leading-snug font-medium text-amber-900"
+                                className="inline-flex max-w-full items-center rounded-full border border-amber-200 bg-white px-3 py-1.5 text-left text-xs leading-snug font-medium text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/50 dark:text-amber-200"
                               >
                                 {formatSkillLabel(skill)}
                               </span>
                             ))
                           ) : (
-                            <p className="text-xs text-neutral-500">
+                            <p className="text-xs text-muted-foreground">
                               No major gaps flagged.
                             </p>
                           )}
@@ -610,15 +601,15 @@ function Home() {
                 )}
             </div>
 
-            <div className="rounded-3xl border border-neutral-100 bg-white p-5 md:p-6 text-neutral-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] min-h-[180px]">
+            <div className="rounded-3xl border border-border bg-card p-5 md:p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)] min-h-[180px]">
               <div className="mb-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-500">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-500 dark:text-rose-400">
                   FOCUS AREAS
                 </p>
                 <h2 className="mt-1 text-lg font-semibold tracking-tight">
                   What to learn
                 </h2>
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Where this company leans hardest for this role. Some topic suggestions that will help you to learn and get hired.
                 </p>
               </div>
@@ -628,14 +619,14 @@ function Home() {
                   {analysisResult.focusAreas.map((area, index) => (
                     <li
                       key={`${area.name}-${index}`}
-                      className="rounded-2xl border border-neutral-100 bg-neutral-50/80 p-3.5 transition-colors hover:border-neutral-200 hover:bg-white"
+                      className="rounded-2xl border border-border bg-muted/60 p-3.5 transition-colors hover:border-border hover:bg-accent"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-neutral-900">
+                          <p className="text-sm font-semibold text-foreground">
                             {area.name}
                           </p>
-                          <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                             {area.description}
                           </p>
                         </div>
@@ -646,7 +637,7 @@ function Home() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Search YouTube for ${area.name}`}
-                          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm transition hover:border-rose-200 hover:shadow-md"
+                          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background shadow-sm transition hover:border-rose-400/40 hover:shadow-md"
                         >
                           <img
                             src="/youtube.png"
@@ -661,8 +652,8 @@ function Home() {
                   ))}
                 </ul>
               ) : (
-                <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/70 px-4 py-8 text-center">
-                  <p className="text-sm text-neutral-500">
+                <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8 text-center">
+                  <p className="text-sm text-muted-foreground">
                     Run an analysis and this column will list the topics this
                     company expects you to know — each with a YouTube search.
                   </p>
@@ -678,7 +669,7 @@ function Home() {
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={handleAuthSuccess}
       />
-    </main>
+    </ThemedArcBandsBackground>
   );
 }
 
@@ -686,9 +677,11 @@ export default function Page() {
   return (
     <Suspense
       fallback={
-        <main className="relative min-h-screen flex items-center justify-center bg-background text-foreground">
-          <p className="text-sm text-muted-foreground">Loading SkillSync…</p>
-        </main>
+        <ThemedArcBandsBackground>
+          <div className="flex min-h-screen items-center justify-center">
+            <p className="text-sm text-muted-foreground">Loading SkillSync…</p>
+          </div>
+        </ThemedArcBandsBackground>
       }
     >
       <Home />
