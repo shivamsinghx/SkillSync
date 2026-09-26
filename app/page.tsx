@@ -34,19 +34,53 @@ async function extractTextFromPDF(file: File): Promise<string> {
     body: formData,
   });
 
-  const data = await res.json().catch(() => ({}));
+  const contentType = res.headers.get("content-type");
+  const rawBody = await res.text();
+  const trimmedBody = rawBody.trim();
+  const looksLikeJson =
+    (contentType ?? "").includes("application/json") ||
+    trimmedBody.startsWith("{") ||
+    trimmedBody.startsWith("[");
+  let data: { error?: unknown; message?: unknown; text?: unknown } = {};
+  let bodyShape: "json" | "html" | "text" | "empty" | "invalid-json" = "empty";
+
   console.info("[extractTextFromPDF] status", res.status);
-  console.info("[extractTextFromPDF] json keys", Object.keys(data));
-  console.info(
-    "[extractTextFromPDF] error field",
-    typeof data.error === "string" ? data.error : typeof data.error
-  );
+  console.info("[extractTextFromPDF] ok", res.ok);
+  console.info("[extractTextFromPDF] content-type", contentType);
+
+  if (!trimmedBody) {
+    bodyShape = "empty";
+  } else if (looksLikeJson) {
+    try {
+      data = JSON.parse(trimmedBody);
+      bodyShape = "json";
+      console.info("[extractTextFromPDF] json keys", Object.keys(data));
+      console.info(
+        "[extractTextFromPDF] error field",
+        typeof data.error === "string" ? data.error : typeof data.error
+      );
+    } catch {
+      bodyShape = "invalid-json";
+    }
+  } else if (trimmedBody.startsWith("<")) {
+    bodyShape = "html";
+  } else {
+    bodyShape = "text";
+  }
+
+  console.info("[extractTextFromPDF] body shape", bodyShape, "length", rawBody.length);
 
   if (!res.ok) {
     const apiError =
-      typeof data.error === "string" && data.error.trim()
+      bodyShape === "json" && typeof data.error === "string" && data.error.trim()
         ? data.error
-        : `PDF parse failed (HTTP ${res.status})`;
+        : bodyShape === "json" &&
+            typeof data.message === "string" &&
+            data.message.trim()
+          ? data.message
+          : bodyShape === "html"
+            ? `PDF parse failed (HTTP ${res.status}, HTML response)`
+            : `PDF parse failed (HTTP ${res.status}, ${bodyShape} response)`;
     console.info("[extractTextFromPDF] throwing", apiError);
     throw new Error(apiError);
   }

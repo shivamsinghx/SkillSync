@@ -1,12 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const MODEL_CANDIDATES = [
-  process.env.GEMINI_MODEL?.trim(),
-  "gemini-flash-latest",
+const MODELS = [
   "gemini-3.8-flash",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-].filter((m): m is string => Boolean(m));
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+] as const;
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAYS_MS = [2_000, 4_000];
 
 type AnalysisShape = {
   matchedSkills: string[];
@@ -38,13 +38,6 @@ function parseAnalysisJson(text: string): AnalysisShape {
   }
 }
 
-function shouldTryNextModel(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return /not found|not supported|unknown model|404|401|403|429|503|overloaded|unavailable|ACCESS_TOKEN_TYPE_UNSUPPORTED|PERMISSION_DENIED|UNAUTHENTICATED/i.test(
-    message
-  );
-}
-
 function isAuthFailure(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return /401|403|API key not valid|ACCESS_TOKEN_TYPE_UNSUPPORTED|PERMISSION_DENIED|UNAUTHENTICATED/i.test(
@@ -52,7 +45,23 @@ function isAuthFailure(error: unknown) {
   );
 }
 
-let workingModel: string | null = null;
+function isTransientGeminiError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (
+    /\b(400|401|403|404)\b|API key not valid|ACCESS_TOKEN_TYPE_UNSUPPORTED|PERMISSION_DENIED|UNAUTHENTICATED|malformed|invalid argument|safety|blocked/i.test(
+      message
+    )
+  ) {
+    return false;
+  }
+  return /\b(429|500|502|503|504)\b|unavailable|high demand|overloaded/i.test(
+    message
+  );
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function analyzeSkillFit(input: {
   jobDescription: string;
@@ -96,60 +105,72 @@ ${input.portfolioText}
 `;
 
   let lastError: unknown;
-  const candidates = workingModel
-    ? [workingModel, ...MODEL_CANDIDATES.filter((m) => m !== workingModel)]
-    : MODEL_CANDIDATES;
 
-  for (const modelName of candidates) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          responseMimeType: "application/json",
-        },
-      });
+  for (const modelName of MODELS) {
+    let moveToNextModel = false;
 
-      const result = await model.generateContent(prompt);
-      const parsed = parseAnalysisJson(result.response.text());
-      workingModel = modelName;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        console.info("[gemini] attempting", modelName, "attempt", attempt + 1);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: "application/json",
+          },
+        });
 
-      return {
-        matchedSkills: Array.isArray(parsed.matchedSkills)
-          ? parsed.matchedSkills
-          : [],
-        missingSkills: Array.isArray(parsed.missingSkills)
-          ? parsed.missingSkills
-          : [],
-        highlightProject:
-          typeof parsed.highlightProject === "string"
-            ? parsed.highlightProject
-            : "",
-        pitch: typeof parsed.pitch === "string" ? parsed.pitch : "",
-        focusAreas: Array.isArray(parsed.focusAreas)
-          ? parsed.focusAreas
-              .filter(
-                (item): item is { name: string; description: string } =>
-                  Boolean(item) &&
-                  typeof item.name === "string" &&
-                  typeof item.description === "string"
-              )
-              .map((item) => ({
-                name: item.name.trim(),
-                description: item.description.trim(),
-              }))
-              .filter((item) => item.name && item.description)
-          : [],
-      };
-    } catch (error) {
-      lastError = error;
-      if (shouldTryNextModel(error)) continue;
-      throw error;
+        const result = await model.generateContent(prompt);
+        const parsed = parseAnalysisJson(result.response.text());
+
+        return {
+          matchedSkills: Array.isArray(parsed.matchedSkills)
+            ? parsed.matchedSkills
+            : [],
+          missingSkills: Array.isArray(parsed.missingSkills)
+            ? parsed.missingSkills
+            : [],
+          highlightProject:
+            typeof parsed.highlightProject === "string"
+              ? parsed.highlightProject
+              : "",
+          pitch: typeof parsed.pitch === "string" ? parsed.pitch : "",
+          focusAreas: Array.isArray(parsed.focusAreas)
+            ? parsed.focusAreas
+                .filter(
+                  (item): item is { name: string; description: string } =>
+                    Boolean(item) &&
+                    typeof item.name === "string" &&
+                    typeof item.description === "string"
+                )
+                .map((item) => ({
+                  name: item.name.trim(),
+                  description: item.description.trim(),
+                }))
+                .filter((item) => item.name && item.description)
+            : [],
+        };
+      } catch (error) {
+        lastError = error;
+        if (!isTransientGeminiError(error)) {
+          moveToNextModel = false;
+          break;
+        }
+        if (attempt < MAX_ATTEMPTS - 1) {
+          await sleep(RETRY_DELAYS_MS[attempt]);
+          continue;
+        }
+        moveToNextModel = true;
+      }
+    }
+
+    if (!moveToNextModel) {
+      break;
     }
   }
 
   if (isAuthFailure(lastError)) {
     throw new Error(
-      "Gemini rejected the API key for every available model. Check GEMINI_API_KEY in .env (get a key from https://aistudio.google.com/apikey)."
+      "Gemini rejected the API key. Check GEMINI_API_KEY in .env (get a key from https://aistudio.google.com/apikey)."
     );
   }
 

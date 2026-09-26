@@ -1,6 +1,6 @@
+import path from "node:path";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { PDFParse } from "pdf-parse";
 import { authOptions } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -17,64 +17,118 @@ function sanitizeParseError(error: unknown): string {
     .trim();
 
   if (!sanitized) {
-    return "Failed to read the PDF. Try pasting the text instead.";
+    return "Failed to read the PDF. Try another file or a text-based PDF.";
   }
 
   return sanitized.length > 300 ? `${sanitized.slice(0, 300)}…` : sanitized;
 }
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+function jsonError(error: string, status: number) {
+  console.log(`[parse-resume] returning ${status}`);
+  return NextResponse.json({ error }, { status });
+}
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+function getUploadBytes(file: unknown): Promise<ArrayBuffer> | null {
+  if (file && typeof file === "object" && "arrayBuffer" in file) {
+    const maybe = file as { arrayBuffer?: () => Promise<ArrayBuffer> };
+    if (typeof maybe.arrayBuffer === "function") {
+      return maybe.arrayBuffer();
+    }
   }
+  return null;
+}
 
+export async function POST(req: Request) {
+  console.log("[parse-resume] request received");
   try {
-    console.info("[parse-resume] request received");
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+    } catch (err) {
+      const name = err instanceof Error ? err.name : "";
+      if (name === "JWEDecryptionFailed" || name === "JWTExpired") {
+        return jsonError(
+          "Session expired or invalid. Please sign out and sign in again.",
+          401
+        );
+      }
+      throw err;
+    }
+
+    if (!session) {
+      return jsonError("Unauthorized", 401);
+    }
+
+    console.log("[parse-resume] session check passed");
     const formData = await req.formData();
     const file = formData.get("file");
+    console.log("[parse-resume] file received", {
+      fileName: file instanceof File ? file.name : "upload.bin",
+      fileSize: file instanceof Blob ? file.size : undefined,
+      contentType: file instanceof Blob ? file.type || "unknown" : "unknown",
+    });
+    const bytesPromise = getUploadBytes(file);
 
-    if (!(file instanceof Blob)) {
+    if (!bytesPromise) {
       console.info("[parse-resume] missing file field", {
         fieldType: file === null ? "null" : typeof file,
       });
-      return NextResponse.json(
-        { error: "Upload a PDF resume." },
-        { status: 400 }
-      );
+      return jsonError("Upload a PDF resume.", 400);
     }
 
     const fileName = file instanceof File ? file.name : "upload.bin";
-    const contentType = file.type || "unknown";
+    const contentType = file instanceof Blob ? file.type || "unknown" : "unknown";
+    const fileSize = file instanceof Blob ? file.size : undefined;
     console.info("[parse-resume] upload meta", {
       fileName,
-      fileSize: file.size,
+      fileSize,
       contentType,
-      isFile: file instanceof File,
     });
 
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json(
-        { error: "PDF is too large. Use a file under 10MB or paste the text." },
-        { status: 413 }
+    if (typeof fileSize === "number" && fileSize > MAX_BYTES) {
+      return jsonError(
+        "PDF is too large. Use a file under 10MB.",
+        413
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const buffer = Buffer.from(await bytesPromise);
+    console.log("[parse-resume] buffer created", { byteLength: buffer.length });
+    if (buffer.length > MAX_BYTES) {
+      return jsonError("PDF is too large. Use a file under 10MB.", 413);
+    }
+
+    if (buffer.subarray(0, 4).toString() !== "%PDF") {
+      return jsonError("That file is not a valid PDF.", 400);
+    }
+
+    const { PDFParse } = await import("pdf-parse");
+    PDFParse.setWorker(
+      path.join(
+        process.cwd(),
+        "node_modules/pdf-parse/dist/pdf-parse/cjs/pdf.worker.mjs"
+      )
+    );
+
     const parser = new PDFParse({ data: buffer });
+    console.log("[parse-resume] parser created");
 
     try {
+      console.log("[parse-resume] getText started");
       const result = await parser.getText();
+      console.log("[parse-resume] getText completed");
       const text = result.text?.trim() ?? "";
+      console.log("[parse-resume] extracted text length:", text.length);
 
       if (!text) {
-        return NextResponse.json(
-          { error: "No text found in that PDF. Try pasting the text instead." },
-          { status: 422 }
+        return jsonError(
+          "No text found in that PDF. Try a text-based PDF instead of a scanned image.",
+          422
         );
       }
 
+      console.log("[parse-resume] returning success response");
+      console.log("[parse-resume] returning 200");
       return NextResponse.json({ text });
     } finally {
       await parser.destroy();
@@ -85,9 +139,6 @@ export async function POST(req: Request) {
       name: error instanceof Error ? error.name : "unknown",
       message: error instanceof Error ? error.message : String(error),
     });
-    return NextResponse.json(
-      { error: sanitizeParseError(error) },
-      { status: 500 }
-    );
+    return jsonError(sanitizeParseError(error), 500);
   }
 }
