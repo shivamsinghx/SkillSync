@@ -687,7 +687,8 @@ function Home() {
                   What to learn
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Where this company leans hardest for this role. Some topic suggestions that will help you to learn and get hired.
+                  where this company leans hardest for this role. Some topic suggestions that will help you to learn and get hired.
+             
                 </p>
               </div>
 
@@ -732,7 +733,7 @@ function Home() {
                 <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8 text-center dark:border-white/15 dark:bg-transparent">
                   <p className="text-sm text-muted-foreground">
                     Run an analysis and this column will list the topics this
-                    company expects you to know — each with a YouTube search.
+                    company expects you to know, with YouTube tutorials.
                   </p>
                 </div>
               )}
