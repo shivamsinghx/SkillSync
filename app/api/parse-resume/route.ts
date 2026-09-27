@@ -102,6 +102,7 @@ export async function POST(req: Request) {
       return jsonError("That file is not a valid PDF.", 400);
     }
 
+    const { CanvasFactory } = await import("pdf-parse/worker");
     const { PDFParse } = await import("pdf-parse");
     PDFParse.setWorker(
       path.join(
@@ -110,7 +111,10 @@ export async function POST(req: Request) {
       )
     );
 
-    const parser = new PDFParse({ data: buffer });
+    const parser = new PDFParse({
+      data: buffer,
+      CanvasFactory,
+    });
     console.log("[parse-resume] parser created");
 
     try {
