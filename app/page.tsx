@@ -11,6 +11,8 @@ import { TextareaFieldInput } from "@/components/inputs/textarea-field-input";
 import { ThreeDButton } from "@/components/buttons/three-d-button";
 import { UserMenuDropdown } from "@/components/dropdowns/user-menu-dropdown";
 import { SpinLoader } from "@/components/loaders/spin-loader";
+import { TextAnimate } from "@/components/ui/text-animate";
+import TextReveal from "@/components/ui/text-reveal";
 import { LogOut } from "lucide-react";
 
 function formatSkillLabel(skill: string) {
@@ -411,21 +413,30 @@ function Home() {
         }
       >
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="font-serif text-5xl md:text-8xl text-neutral-900 dark:text-neutral-100">
+          <TextAnimate
+            as="h1"
+            animation="blurInUp"
+            by="character"
+            once
+            className="font-serif text-5xl md:text-8xl text-neutral-900 dark:text-neutral-100"
+          >
             SkillSync.
-          </h1>
+          </TextAnimate>
 
-          <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            see where you match fix what you don't.
-          </p>
+          <TextReveal
+            text="see where you match fix what you don't."
+            className="mt-4 text-lg md:text-xl text-muted-foreground"
+            duration={0.45}
+            staggerDelay={0.08}
+          />
 
           {!isAuthenticated && (
-            <p className="mt-6 text-sm md:text-base text-muted-foreground leading-relaxed">
-              SkillSync analyzes job requirements and compares them with your
-              portfolio to identify skill gaps, highlight your strongest projects,
-              and generate a tailored pitch that helps you stand out.
-            
-            </p>
+            <TextReveal
+              text="SkillSync analyzes job requirements and compares them with your portfolio to identify skill gaps, highlight your strongest projects, and generate a tailored pitch that helps you stand out."
+              className="mt-6 text-sm md:text-base text-muted-foreground leading-relaxed"
+              duration={0.4}
+              staggerDelay={0.04}
+            />
           )}
 
           {!isAuthenticated && (
