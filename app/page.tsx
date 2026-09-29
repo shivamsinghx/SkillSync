@@ -27,6 +27,119 @@ function formatSkillLabel(skill: string) {
     .trim();
 }
 
+function atsMatchLabel(score: number) {
+  if (score >= 90) {
+    return {
+      label: "Excellent Match",
+      className: "text-emerald-700 dark:text-emerald-300",
+    };
+  }
+  if (score >= 75) {
+    return {
+      label: "Strong Match",
+      className: "text-emerald-700 dark:text-emerald-300",
+    };
+  }
+  if (score >= 60) {
+    return {
+      label: "Moderate Match",
+      className: "text-amber-800 dark:text-amber-300",
+    };
+  }
+  return {
+    label: "Needs Improvement",
+    className: "text-rose-600 dark:text-rose-400",
+  };
+}
+
+function finiteScore(value: number | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function AtsScoreSection({ analysis }: { analysis: AnalysisResult }) {
+  const score = finiteScore(analysis.atsScore);
+  const breakdown = analysis.atsBreakdown;
+  const rows = [
+    ["Keyword Match", finiteScore(breakdown?.keywordMatch)],
+    ["Skills Match", finiteScore(breakdown?.skillsMatch)],
+    ["Experience Relevance", finiteScore(breakdown?.experienceRelevance)],
+    ["Job Alignment", finiteScore(breakdown?.jobAlignment)],
+    ["ATS Readability", finiteScore(breakdown?.atsReadability)],
+  ].filter((row): row is [string, number] => row[1] !== null);
+  const keywords = (analysis.missingKeywords ?? []).map((keyword) => keyword.trim()).filter(Boolean);
+  const recommendations = (analysis.atsRecommendations ?? [])
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (score === null && keywords.length === 0 && recommendations.length === 0) {
+    return null;
+  }
+
+  const match = score === null ? null : atsMatchLabel(score);
+
+  return (
+    <>
+      {score !== null && match && (
+        <div className="rounded-2xl border border-border/60 bg-muted/10 p-3.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            ATS Resume Score
+          </p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+            {Math.round(score)}
+            <span className="text-base font-medium text-muted-foreground"> / 100</span>
+          </p>
+          <p className={`mt-1 text-sm font-medium ${match.className}`}>{match.label}</p>
+          {rows.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {rows.map(([label, value]) => (
+                <li key={label} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-foreground/90">{label}</span>
+                  <span className="tabular-nums font-medium text-foreground">
+                    {Math.round(value)}%
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {keywords.length > 0 && (
+        <div className="rounded-2xl border border-amber-200/80 bg-amber-50 p-3.5 dark:border-amber-500/25 dark:bg-amber-500/10">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800 dark:text-amber-300 mb-3">
+            Missing keywords
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((keyword) => (
+              <span
+                key={keyword}
+                className="inline-flex max-w-full items-center rounded-full border border-amber-200 bg-white px-3 py-1.5 text-left text-xs leading-snug font-medium text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/50 dark:text-amber-200"
+              >
+                {formatSkillLabel(keyword)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {recommendations.length > 0 && (
+        <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+            ATS recommendations
+          </h3>
+          <ol className="list-decimal space-y-1.5 pl-4 text-sm text-foreground/90">
+            {recommendations.map((item) => (
+              <li key={item} className="leading-relaxed">
+                {item}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </>
+  );
+}
+
 async function extractTextFromPDF(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
@@ -595,6 +708,7 @@ function Home() {
 
                 {analysisResult && (
                   <div className="space-y-4 text-left">
+                    <AtsScoreSection analysis={analysisResult} />
                     <div className="space-y-3">
                       <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50 p-3.5 dark:border-emerald-500/25 dark:bg-emerald-500/10">
                         <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300 mb-3">
