@@ -103,6 +103,16 @@ type AnalysisResult = {
   pitch: string;
   createdAt?: string;
   focusAreas?: { name: string; description: string }[];
+  atsScore?: number;
+  atsBreakdown?: {
+    keywordMatch: number;
+    skillsMatch: number;
+    experienceRelevance: number;
+    jobAlignment: number;
+    atsReadability: number;
+  };
+  missingKeywords?: string[];
+  atsRecommendations?: string[];
 };
 
 function Home() {
