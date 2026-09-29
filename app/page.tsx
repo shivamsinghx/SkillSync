@@ -11,6 +11,7 @@ import { TextareaFieldInput } from "@/components/inputs/textarea-field-input";
 import { ThreeDButton } from "@/components/buttons/three-d-button";
 import { UserMenuDropdown } from "@/components/dropdowns/user-menu-dropdown";
 import { SpinLoader } from "@/components/loaders/spin-loader";
+import { NumberTicker } from "@/components/ui/number-ticker";
 import { TextAnimate } from "@/components/ui/text-animate";
 import TextReveal from "@/components/ui/text-reveal";
 import { LogOut } from "lucide-react";
@@ -78,14 +79,18 @@ function AtsScoreSection({ analysis }: { analysis: AnalysisResult }) {
   const match = score === null ? null : atsMatchLabel(score);
 
   return (
-    <>
+    <div className="col-span-full grid grid-cols-subgrid gap-6 items-stretch">
       {score !== null && match && (
-        <div className="rounded-2xl border border-border/60 bg-muted/10 p-3.5">
+        <div className="h-full rounded-3xl border border-border bg-card p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:border-transparent dark:bg-transparent dark:shadow-none lg:col-start-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             ATS Resume Score
           </p>
           <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-            {Math.round(score)}
+            <NumberTicker
+              value={Math.round(score)}
+              startValue={0}
+              className="text-3xl font-semibold tracking-tight text-foreground"
+            />
             <span className="text-base font-medium text-muted-foreground"> / 100</span>
           </p>
           <p className={`mt-1 text-sm font-medium ${match.className}`}>{match.label}</p>
@@ -105,7 +110,7 @@ function AtsScoreSection({ analysis }: { analysis: AnalysisResult }) {
       )}
 
       {keywords.length > 0 && (
-        <div className="rounded-2xl border border-amber-200/80 bg-amber-50 p-3.5 dark:border-amber-500/25 dark:bg-amber-500/10">
+        <div className="h-fit self-start rounded-3xl border border-amber-200/80 bg-amber-50 p-6 dark:border-amber-500/25 dark:bg-amber-500/10 lg:col-start-2">
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800 dark:text-amber-300 mb-3">
             Missing keywords
           </h3>
@@ -123,7 +128,7 @@ function AtsScoreSection({ analysis }: { analysis: AnalysisResult }) {
       )}
 
       {recommendations.length > 0 && (
-        <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+        <div className="h-full rounded-3xl border border-border bg-card p-6 text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:border-transparent dark:bg-transparent dark:shadow-none lg:col-start-3">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
             ATS recommendations
           </h3>
@@ -136,7 +141,7 @@ function AtsScoreSection({ analysis }: { analysis: AnalysisResult }) {
           </ol>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -708,7 +713,6 @@ function Home() {
 
                 {analysisResult && (
                   <div className="space-y-4 text-left">
-                    <AtsScoreSection analysis={analysisResult} />
                     <div className="space-y-3">
                       <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50 p-3.5 dark:border-emerald-500/25 dark:bg-emerald-500/10">
                         <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300 mb-3">
@@ -862,6 +866,7 @@ function Home() {
                 </div>
               )}
             </div>
+            {analysisResult && <AtsScoreSection analysis={analysisResult} />}
           </div>
         )}
       </div>
